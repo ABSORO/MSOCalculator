@@ -14,15 +14,14 @@
 <body class="text-gray-100 min-h-screen flex flex-col items-center p-6 gap-6">
   <h1 class="text-3xl font-bold text-center">Ranch RP – MSO Sentencing Calculator</h1>
 
-  <!-- Time Served Timer (moved to top) -->
+  <!-- Stand‑alone Time‑Served Stopwatch (purely informational) -->
   <section class="w-full max-w-3xl bg-slate-800/60 rounded-2xl shadow-lg p-6 space-y-3">
-    <h2 class="text-xl font-semibold">Time Served <span class="text-xs font-normal text-slate-400">(Subtract this to the time in the charges section directly below, not the converted time)</span></h2>
+    <h2 class="text-xl font-semibold">Stopwatch <span class="text-xs font-normal text-slate-400">(IC "time served" tracker – does **not** affect math)</span></h2>
     <div class="flex flex-wrap items-center gap-3 text-sm">
       <span id="timer-display" class="text-lg font-mono min-w-[4.5rem]">00:00</span>
       <button id="timer-start" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg">Start</button>
       <button id="timer-pause" class="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded-lg">Pause</button>
       <button id="timer-reset" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded-lg">Reset</button>
-      <input type="hidden" id="served-minutes" value="0">
     </div>
   </section>
 
@@ -50,10 +49,10 @@
     <h2 class="text-xl font-semibold">Modifiers</h2>
     <div class="grid sm:grid-cols-2 gap-2 text-sm">
       <label class="cursor-pointer"><input type="checkbox" id="mod-aiding" class="mr-1 accent-violet-500">Aiding &amp; Abetting <span class="days">(50% off)</span></label>
-      <label class="cursor-pointer"><input type="checkbox" id="mod-ps" class="mr-1 accent-violet-500">Public Servants Enhancement <span class="days">(+60 Days)</span></label>
-      <label class="cursor-pointer"><input type="checkbox" id="mod-threat" class="mr-1 accent-violet-500">Threat to Society <span class="years">(+3 Years)</span></label>
-      <label class="cursor-pointer"><input type="checkbox" id="mod-habitual" class="mr-1 accent-violet-500">Habitual Offender <span class="days">(+100 Days)</span></label>
-      <label class="cursor-pointer"><input type="checkbox" id="mod-nuisance" class="mr-1 accent-violet-500">Public Nuisance Offender <span class="days">(+60 Days)</span></label>
+      <label class="cursor-pointer"><input type="checkbox" id="mod-ps" class="mr-1 accent-violet-500">Public Servants Enhancement <span class="days">(+60 Days)</span></label>
+      <label class="cursor-pointer"><input type="checkbox" id="mod-threat" class="mr-1 accent-violet-500">Threat to Society <span class="years">(+3 Years)</span></label>
+      <label class="cursor-pointer"><input type="checkbox" id="mod-habitual" class="mr-1 accent-violet-500">Habitual Offender <span class="days">(+100 Days)</span></label>
+      <label class="cursor-pointer"><input type="checkbox" id="mod-nuisance" class="mr-1 accent-violet-500">Public Nuisance Offender <span class="days">(+60 Days)</span></label>
     </div>
   </section>
 
@@ -67,7 +66,6 @@
   </section>
 
 <script>
-  /* ------------------- GLOBALS & UTILS ------------------- */
   const qs = sel => document.querySelector(sel);
   const chargesBody = qs('#charges-table tbody');
   let lastTotalDays = 0;
@@ -78,10 +76,10 @@
     return {years, days:days-(401+(years-1)*100)};
   }
 
-  /* ------------------- CHARGES TABLE ------------------- */
+  /* ------------------- Charges UI ------------------- */
   addRow();
-  qs('#add-charge').onclick=addRow;
-  qs('#clear-all').onclick=()=>{chargesBody.innerHTML='';addRow();realtimeCalc();};
+  qs('#add-charge').onclick = addRow;
+  qs('#clear-all').onclick = ()=>{chargesBody.innerHTML=''; addRow(); realtimeCalc();};
 
   function addRow(){
     const tr=document.createElement('tr');
@@ -96,9 +94,8 @@
     tdU.appendChild(sel);
     const tdD=document.createElement('td');
     const del=document.createElement('button');
-    del.textContent='✕';
-    del.className='text-red-400 hover:text-red-200';
-    del.onclick=()=>{tr.remove();realtimeCalc();};
+    del.textContent='✕'; del.className='text-red-400 hover:text-red-200';
+    del.onclick=()=>{tr.remove(); realtimeCalc();};
     tdD.appendChild(del);
     [tdV,tdU,tdD].forEach(td=>td.classList.add('pr-2','py-1'));
     tr.append(tdV,tdU,tdD);
@@ -112,11 +109,11 @@
     if(e.key==='Enter'){e.preventDefault(); addRow();}
     if(e.key==='Delete' && e.ctrlKey){e.preventDefault(); row.remove(); realtimeCalc();}
     if(['ArrowUp','ArrowDown'].includes(e.key) && e.target.tagName==='INPUT'){
-      e.preventDefault(); const sel=row.querySelector('select'); sel.value=sel.value==='days'?'years':'days'; sel.dispatchEvent(new Event('change',{bubbles:true}));
+      e.preventDefault(); const sel=row.querySelector('select'); sel.value=sel.value==='days'?'years':'days'; sel.dispatchEvent(new Event('change', {bubbles:true}));
     }
   });
 
-  /* ------------------- REAL‑TIME CALC ------------------- */
+  /* ------------------- Real‑time Calculation ------------------- */
   document.addEventListener('input',e=>{if(e.target.closest('#charges-table')||e.target.id.startsWith('mod-')) realtimeCalc();});
   document.addEventListener('change',e=>{if(e.target.closest('#charges-table')||e.target.id.startsWith('mod-')) realtimeCalc();});
 
@@ -133,26 +130,26 @@
     if(qs('#mod-threat').checked) totalDays+=3*1440;
     if(qs('#mod-habitual').checked) totalDays+=100;
     if(qs('#mod-nuisance').checked) totalDays+=60;
-    totalDays=Math.max(0,Math.round(totalDays-parseInt(qs('#served-minutes').value,10)));
+    totalDays=Math.round(totalDays);
     lastTotalDays=totalDays;
     const yrs=Math.floor(totalDays/1440), d=totalDays%1440;
     qs('#result').innerHTML=`<span class="years">${yrs}</span> year${yrs!==1?'s':''}  <span class="days">${d}</span> day${d!==1?'s':''}`;
     qs('#result-days').textContent=`(${totalDays} total days)`;
   }
-
   realtimeCalc();
 
-  /* Copy Days */
   qs('#copy-days').onclick=async()=>{try{await navigator.clipboard.writeText(String(lastTotalDays));qs('#copy-days').textContent='Copied!';setTimeout(()=>qs('#copy-days').textContent='Copy Days',1000);}catch{alert('Copy failed');}};
 
-  /* ------------------- TIMER ------------------- */
+  /* ------------------- Simple Stopwatch ------------------- */
   const tDisplay=qs('#timer-display');
   let elapsed=0,interval=null;
-  function updateTimer(){const m=String(Math.floor(elapsed/60)).padStart(2,'0');const s=String(elapsed%60).padStart(2,'0');tDisplay.textContent=`${m}:${s}`; qs('#served-minutes').value=Math.floor(elapsed/60); realtimeCalc();}
-  qs('#timer-start').onclick=()=>{if(interval) return; interval=setInterval(()=>{elapsed++; updateTimer();},1000);} ;
-  qs('#timer-pause').onclick=()=>{clearInterval(interval); interval=null;};
-  qs('#timer-reset').onclick=()=>{clearInterval(interval); interval=null; elapsed=0; updateTimer();};
+  function updateTimer(){const m=String(Math.floor(elapsed/60)).padStart(2,'0');const s=String(elapsed%60).padStart(2,'0');tDisplay.textContent=`${m}:${s}`;}
+  qs('#timer-start').onclick=()=>{if(interval)return;interval=setInterval(()=>{elapsed++;updateTimer();},1000);} ;
+  qs('#timer-pause').onclick=()=>{clearInterval(interval);interval=null;};
+  qs('#timer-reset').onclick=()=>{clearInterval(interval);interval=null;elapsed=0;updateTimer();};
   updateTimer();
 </script>
 </body>
 </html>
+
+
